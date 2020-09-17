@@ -11,3 +11,12 @@ let inventory;
 //HOLDS OUTSTANDING ORDERS
 let orders = [];
 
+//INITIALIZE CATALOG AND SET PRODUCT QUANTITIES TO ZERO
+let initCatalog = (productInfo) => {
+    console.log("INITIALIZING CATALOG...\n")
+    productInfo
+        .forEach(product =>
+            product.quantity = 0);
+    return productInfo;
+}
+
