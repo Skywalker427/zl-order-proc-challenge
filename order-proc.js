@@ -13,6 +13,14 @@ let inventory;
 //HOLDS OUTSTANDING ORDERS
 let orders = [];
 
+//ARRAY SUM HELPER FUNCTION
+let arrSum = (array) =>{
+   let sum = array.reduce(function(a, b){
+        return a + b;
+    }, 0);
+    return sum;
+}
+
 
 //INITIALIZE CATALOG AND SET PRODUCT QUANTITIES TO ZERO
 let initCatalog = (productInfo) => {
@@ -39,9 +47,12 @@ let processOrder = (order) => {
     if(!Array.isArray(order)){
         orders.push(order);
     }
+    
 
     orders.forEach(ord => {
         let shipInd = 0;
+        //MASS IN CURRENT SHIPMENT
+        let massInShipment = [];
 		
         ord.requested.forEach(request => {
            //GRAB THE INDEX OF REQUESTED ITEM FROM INVENTORY
@@ -49,6 +60,12 @@ let processOrder = (order) => {
 
            let processed = false;
            while(!processed){
+            let currentProductMass = inventory[invIndex].mass_g;
+
+            if(arrSum(massInShipment) + currentProductMass > MAX_SHIPMENT_MASS_G){
+                shipInd++;
+                massInShipment = [];
+            }
 
                //BREAK IF PRODUCT IS NOT IN INVENTORY STOCK
                if(inventory[invIndex].quantity === 0)
@@ -64,24 +81,19 @@ let processOrder = (order) => {
                        shipments[shipInd].shipped.push({product_id: inventory[invIndex].product_id, quantity: 0})
                    }
 
-                   let currentProductMass = inventory[invIndex].mass_g;
-                   let currentShipmentMass = (shipments[shipInd].shipped.quantity || 0) * currentProductMass;
-
                    /*ADD PRODUCTS TO CURRENT SHIPMENT WHILES THERES AN OUTSTANDING ORDER, 
                    INVENTORY AND WEIGHT OF SHIPMENT IS NOT EXCEEDED BY OPERATION*/
-                   while((currentShipmentMass + currentProductMass < MAX_SHIPMENT_MASS_G) & 
+                   while((arrSum(massInShipment) + currentProductMass <= MAX_SHIPMENT_MASS_G) & 
                    (inventory[invIndex].quantity > 0) & 
                    (request.quantity > 0)){
                        shipments[shipInd].shipped[shipments[shipInd].shipped.length - 1].quantity += 1;
-                       currentShipmentMass += currentProductMass;
                        request.quantity--;
+                       massInShipment.push(currentProductMass);
                        inventory[invIndex].quantity--;
                    }
                    
                    //IF WEIGHT OF SHIPMENT IS EXCEEDED, INCREMENT SHIPMENT INDEX
-                   if(currentShipmentMass + currentProductMass > MAX_SHIPMENT_MASS_G){
-                       shipInd++;
-                   }
+                  
                }
 
                //IF INVENTORY FOR PRODUCT IS DEPLETED OR ORDER QUANTITY MET, BREAK 
